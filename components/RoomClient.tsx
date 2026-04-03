@@ -262,7 +262,11 @@ export default function RoomClient({ code, isHome }: Props) {
         {isHome ? (
           /* HOME HEADER */
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }} className="gradient-text">ClipSync</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Logo image, place your logo inside the /public folder named logo.svg or logo.png */}
+              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 32, height: 32, display: "block" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }} className="gradient-text">ClipSync</h1>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: connected ? "#22c55e" : "var(--text-secondary)", fontWeight: 500 }}>
               {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
               <span>{connected ? "Active" : "Connecting..."}</span>
@@ -275,7 +279,9 @@ export default function RoomClient({ code, isHome }: Props) {
               <button className="btn-ghost" onClick={() => router.push("/")} style={{ padding: "6px 10px", borderRadius: 8 }}>
                 <ArrowLeft size={16} /> <span className="hidden sm:inline" style={{ fontSize: 13 }}>Back</span>
               </button>
-              <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Private Room</h1>
+              {/* Logo image */}
+              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 24, height: 24, display: "block" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>ClipSync Room</h1>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
               <button
