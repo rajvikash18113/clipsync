@@ -6,8 +6,15 @@ type Props = { params: Promise<{ code: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
   return {
-    title: `Room ${code} — ClipSync`,
-    description: `Real-time clipboard room ${code}. Share clips instantly across all your devices.`,
+    title: `Room ${code}`,
+    description: `Real-time online clipboard room ${code}. Share text and files instantly across all your devices.`,
+    alternates: {
+      canonical: `/room/${code}`,
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
   };
 }
 

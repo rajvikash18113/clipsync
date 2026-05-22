@@ -2,14 +2,57 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ClipSync",
+  metadataBase: new URL("https://onlineclip.vercel.app"),
+  title: {
+    default: "OnlineClip | Instant Online Clipboard & Sharing",
+    template: "%s | OnlineClip",
+  },
   description:
-    "ClipSync is the ultimate fast, secure, and hassle-free clipboard syncing tool. Instantly share text, URLs, and code snippets across all your devices without any login required. Copy on one device, paste on another.",
-  keywords: ["ClipSync", "clipboard sync", "share text online", "cross-device clipboard", "copy paste across devices", "secure clipboard sharing", "online clipboard"],
+    "OnlineClip is the fastest online clipboard and file sharing tool. Instantly share text, links, and files across all your devices with no registration required.",
+  keywords: [
+    "OnlineClip",
+    "online clip",
+    "online clipboard",
+    "clipboard",
+    "online sharing",
+    "clipboard online",
+    "clipboard sharing",
+    "share clipboard online",
+    "copy paste online",
+    "temporary clipboard",
+    "cross-device copy paste",
+    "send text between devices",
+    "send files between devices",
+    "cloud clipboard",
+    "web clipboard",
+    "notes sharing",
+    "clipboard sync",
+    "instant file transfer"
+  ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "ClipSync",
-    description: "Instantly sync text, links, and code snippets across all your devices without logging in. Fast, secure, and hassle-free clipboard sharing.",
+    title: "OnlineClip | Instant Online Clipboard & Sharing",
+    description: "Instantly sync text, links, and files across all your devices with no login required. Fast, secure, and registration-free.",
+    url: "https://onlineclip.vercel.app",
+    siteName: "OnlineClip",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "OnlineClip Logo",
+      },
+    ],
+    locale: "en_US",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "OnlineClip | Instant Online Clipboard & Sharing",
+    description: "Instantly sync text, links, and files across all your devices with no registration required.",
+    images: ["/logo.png"],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
