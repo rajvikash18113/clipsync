@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, type Clip } from "@/utils/supabase/client";
 import {
-  Clipboard, Copy, Check, Trash2, Clock,
-  ArrowLeft, Users, Wifi, WifiOff, Code2, Link, AlignLeft,
-  Plus, LogIn
+  Clipboard, Check, Clock,
+  ArrowLeft, Users, Wifi, WifiOff,
+  Plus, LogIn, X, QrCode,
+  Bell, BellOff, Monitor,
 } from "lucide-react";
+
+// Components
+import ToastContainer, { type Toast } from "@/components/ToastContainer";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import ClipCard from "@/components/ClipCard";
+import SearchBar from "@/components/SearchBar";
+import QRCodeModal from "@/components/QRCodeModal";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
+import ExportButton from "@/components/ExportButton";
+import FileUpload from "@/components/FileUpload";
 
 type Props = { code: string; isHome?: boolean };
 
@@ -15,141 +26,110 @@ function randomCode() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
 
-function timeAgo(dateStr: string) {
-  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
-  if (diff < 60)  return `${Math.floor(diff)}s ago`;
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-  return `${Math.floor(diff/86400)}d ago`;
-}
-
-function detectType(text: string): "link" | "code" | "text" {
-  if (/^https?:\/\//i.test(text.trim())) return "link";
-  if (/[{}()[\];]/.test(text) || /^\s*(function|const|let|var|class|import|def |#include)/.test(text)) return "code";
-  return "text";
-}
-
-function ClipCard({ clip, onDelete }: { clip: Clip; onDelete: (id: string) => void }) {
-  const [copied, setCopied] = useState(false);
-  const type = detectType(clip.content);
-
-  async function copyToClipboard() {
-    await navigator.clipboard.writeText(clip.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  const TypeIcon = type === "link" ? Link : type === "code" ? Code2 : AlignLeft;
-  const typeColor = type === "link" ? "#38bdf8" : type === "code" ? "#a78bfa" : "#6c63ff";
-
-  return (
-    <div
-      className="glass animate-fade-up"
-      style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8, transition: "border-color 0.2s", borderColor: "rgba(255,255,255,0.05)", borderRadius: 10 }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(108,99,255,0.25)")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)")}
-    >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <TypeIcon size={12} color={typeColor} />
-            <span style={{ fontSize: 10, color: typeColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{type}</span>
-          </div>
-          <pre
-            style={{
-              fontFamily: type === "code" ? '"JetBrains Mono", monospace' : "inherit",
-              fontSize: type === "code" ? 13 : 14,
-              lineHeight: 1.5,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-              color: "var(--text-primary)",
-              maxHeight: 140,
-              overflowY: "auto",
-              margin: 0
-            }}
-          >
-            {clip.content}
-          </pre>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
-          <button
-            onClick={copyToClipboard}
-            title="Copy"
-            style={{
-              width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.03)",
-              color: copied ? "#22c55e" : "var(--text-secondary)",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { if (!copied) { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)"; } }}
-            onMouseLeave={e => { if (!copied) { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; } }}
-          >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-          </button>
-          <button
-            onClick={() => onDelete(clip.id)}
-            title="Delete from UI"
-            style={{
-              width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(255,255,255,0.03)",
-              color: "var(--text-secondary)",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.15)"; (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.03)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.35)", fontSize: 11, marginTop: 0 }}>
-        <Clock size={10} />
-        <span>{timeAgo(clip.created_at)}</span>
-      </div>
-    </div>
-  );
-}
-
 export default function RoomClient({ code, isHome }: Props) {
   const router = useRouter();
+
+  // ── Core State ──
   const [clips, setClips]         = useState<Clip[]>([]);
   const [input, setInput]         = useState("");
   const [loading, setLoading]     = useState(true);
-  const [sending, setSending]     = useState(false);
   const [connected, setConnected] = useState(false);
   const [copied, setCopied]       = useState(false);
-  const channelRef                = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const textareaRef               = useRef<HTMLTextAreaElement>(null);
+  const channelRef                = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  const [showJoin, setShowJoin] = useState(false);
-  const [joinCode, setJoinCode] = useState("");
+  // ── Toast ──
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(0);
+
+  // ── Delete ──
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  // ── Join Modal ──
+  const [showJoin, setShowJoin]   = useState(false);
+  const [joinCode, setJoinCode]   = useState("");
   const [joinError, setJoinError] = useState("");
 
+  // ── QR Modal ──
+  const [showQR, setShowQR] = useState(false);
+
+  // ── Queue ──
+  const sendQueueRef = useRef<string[]>([]);
+  const isProcessingRef = useRef(false);
+  const [queueSize, setQueueSize] = useState(0);
+  const lastSentRef = useRef<{ content: string; time: number }>({ content: "", time: 0 });
+
+  // ── Search & Filter ──
+  const [search, setSearch] = useState("");
+  const [filterTag, setFilterTag] = useState<string | null>(null);
+
+  // ── Pins (localStorage) ──
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+  // ── Tags (localStorage) ──
+  const [clipTags, setClipTags] = useState<Record<string, string[]>>({});
+
+  // ── Notifications ──
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [bellAnimating, setBellAnimating] = useState(false);
+
+  // ── Presence ──
+  const [deviceCount, setDeviceCount] = useState(0);
+
+  const isPublic = code === "PUBLIC";
+
+  // ── Load localStorage on mount ──
+  useEffect(() => {
+    try {
+      const pins = JSON.parse(localStorage.getItem("pinned_clips") || "[]");
+      setPinnedIds(pins);
+      const tags = JSON.parse(localStorage.getItem("clip_tags") || "{}");
+      setClipTags(tags);
+      const notif = localStorage.getItem("clipsync_notifications") === "true";
+      setNotificationsEnabled(notif);
+    } catch { /* ignore */ }
+  }, []);
+
+  // ── Toast helpers ──
+
+  const addToast = useCallback((message: string, type: Toast["type"]) => {
+    const id = String(++toastIdRef.current);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // ── Fetch clips ──
+
   const fetchClips = useCallback(async () => {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    let query = supabase.from("clips").select("*").eq("room_code", code);
+    if (isPublic) {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte("created_at", cutoff);
+    }
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
 
-    const { data, error } = await supabase
-      .from("clips")
-      .select("*")
-      .eq("room_code", code)
-      .gte("created_at", twentyFourHoursAgo)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    const hiddenStr = localStorage.getItem("hidden_clips") || "[]";
-    const hidden: string[] = JSON.parse(hiddenStr);
-
+    const hidden: string[] = JSON.parse(localStorage.getItem("hidden_clips") || "[]");
     if (!error && data) {
-      const visibleClips = (data as Clip[]).filter(c => !hidden.includes(c.id));
-      setClips(visibleClips);
+      setClips((data as Clip[]).filter(c => !hidden.includes(c.id)));
     }
     setLoading(false);
-  }, [code]);
+  }, [code, isPublic]);
+
+  // ── Realtime + Presence ──
 
   useEffect(() => {
     fetchClips();
+
+    // Generate a stable device ID for this session
+    let deviceId = sessionStorage.getItem("clipsync_device_id");
+    if (!deviceId) {
+      deviceId = Math.random().toString(36).substring(2, 10);
+      sessionStorage.setItem("clipsync_device_id", deviceId);
+    }
 
     const channel = supabase
       .channel(`room:${code}`)
@@ -157,30 +137,78 @@ export default function RoomClient({ code, isHome }: Props) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "clips", filter: `room_code=eq.${code}` },
         (payload) => {
+          const hidden: string[] = JSON.parse(localStorage.getItem("hidden_clips") || "[]");
+          if (hidden.includes(payload.new.id)) return;
+
           setClips(prev => {
-            const exists = prev.some(c => c.id === payload.new.id);
-            if (exists) return prev;
+            if (prev.some(c => c.id === payload.new.id)) return prev;
             return [payload.new as Clip, ...prev];
           });
+
+          // Browser notification if tab is hidden
+          if (document.hidden && Notification.permission === "granted") {
+            try {
+              const content = (payload.new as Clip).content;
+              const preview = content.startsWith("[FILE]") ? "📎 New file shared" : content.slice(0, 80);
+              new Notification("ClipSync", {
+                body: preview,
+                icon: "/logo.png",
+                tag: "clipsync-new-clip",
+              });
+            } catch { /* ignore */ }
+          }
         }
       )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "clips", filter: `room_code=eq.${code}` },
-        (payload) => {
-          setClips(prev => prev.filter(c => c.id !== (payload.old as Clip).id));
-        }
-      )
-      .subscribe((status) => {
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        setDeviceCount(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
         setConnected(status === "SUBSCRIBED");
+        if (status === "SUBSCRIBED") {
+          await channel.track({ device_id: deviceId, online_at: new Date().toISOString() });
+        }
       });
 
     channelRef.current = channel;
-
-    return () => {
-      channel.unsubscribe();
-    };
+    return () => { channel.unsubscribe(); };
   }, [code, fetchClips]);
+
+  // ── Queue-based send ──
+
+  const processQueue = useCallback(async () => {
+    if (isProcessingRef.current || sendQueueRef.current.length === 0) return;
+    isProcessingRef.current = true;
+
+    while (sendQueueRef.current.length > 0) {
+      const text = sendQueueRef.current[0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: err } = await (supabase.from("clips") as any)
+        .insert([{ room_code: code, content: text }]);
+      if (err) {
+        console.error("Failed to save clip:", err);
+        addToast(`Failed to save clip: ${err.message}`, "error");
+      }
+      sendQueueRef.current.shift();
+      setQueueSize(sendQueueRef.current.length);
+    }
+    isProcessingRef.current = false;
+  }, [code, addToast]);
+
+  function enqueueContent(text: string) {
+    if (!text) return;
+    const now = Date.now();
+    if (lastSentRef.current.content === text && now - lastSentRef.current.time < 5000) {
+      addToast("Duplicate paste detected — skipped", "info");
+      return;
+    }
+    lastSentRef.current = { content: text, time: now };
+    sendQueueRef.current.push(text);
+    setQueueSize(sendQueueRef.current.length);
+    processQueue();
+  }
+
+  // ── Input handlers ──
 
   function handleInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInput(e.target.value);
@@ -189,42 +217,104 @@ export default function RoomClient({ code, isHome }: Props) {
     el.style.height = Math.min(el.scrollHeight, 360) + "px";
   }
 
-  async function sendContent(text: string) {
-    if (!text || sending) return;
-    setSending(true);
-    // @ts-expect-error Type inference fails without generated DB types, but this is valid
-    const { error: err } = await supabase.from("clips").insert({ room_code: code, content: text });
-    if (!err) {
-      setInput("");
-      if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
-    }
-    setSending(false);
-  }
-
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     const pastedData = e.clipboardData.getData("Text").trim();
     if (pastedData) {
-      e.preventDefault(); 
-      sendContent(pastedData);
+      e.preventDefault();
+      enqueueContent(pastedData);
+      setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
   }
 
-  async function sendClip(e?: React.FormEvent) {
+  function sendClip(e?: React.FormEvent) {
     e?.preventDefault();
-    await sendContent(input.trim());
-  }
-
-  function deleteClip(id: string) {
-    setClips(prev => prev.filter(c => c.id !== id));
-    try {
-      const hiddenStr = localStorage.getItem("hidden_clips") || "[]";
-      const hidden = JSON.parse(hiddenStr);
-      hidden.push(id);
-      localStorage.setItem("hidden_clips", JSON.stringify(hidden));
-    } catch (e) {
-      console.warn("Could not save to localStorage");
+    const trimmed = input.trim();
+    if (trimmed) {
+      enqueueContent(trimmed);
+      setInput("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
     }
   }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendClip(); }
+  }
+
+  // ── Delete ──
+
+  function requestDelete(id: string) { setDeleteTarget(id); }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    setClips(prev => prev.filter(c => c.id !== deleteTarget));
+    try {
+      const hidden = JSON.parse(localStorage.getItem("hidden_clips") || "[]");
+      hidden.push(deleteTarget);
+      localStorage.setItem("hidden_clips", JSON.stringify(hidden));
+    } catch { /* ignore */ }
+    addToast("Clip removed from your view", "success");
+    setDeleteTarget(null);
+  }
+
+  // ── Pin ──
+
+  function togglePin(id: string) {
+    setPinnedIds(prev => {
+      const next = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
+      localStorage.setItem("pinned_clips", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  // ── Tags ──
+
+  function addTag(clipId: string, tag: string) {
+    setClipTags(prev => {
+      const next = { ...prev, [clipId]: [...(prev[clipId] || []), tag] };
+      localStorage.setItem("clip_tags", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function removeTag(clipId: string, tag: string) {
+    setClipTags(prev => {
+      const next = { ...prev, [clipId]: (prev[clipId] || []).filter(t => t !== tag) };
+      if (next[clipId].length === 0) delete next[clipId];
+      localStorage.setItem("clip_tags", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  // All unique tags across clips
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    Object.values(clipTags).forEach(tags => tags.forEach(t => set.add(t)));
+    return Array.from(set).sort();
+  }, [clipTags]);
+
+  // ── Notifications ──
+
+  async function toggleNotifications() {
+    if (!notificationsEnabled) {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        setNotificationsEnabled(true);
+        localStorage.setItem("clipsync_notifications", "true");
+        addToast("Notifications enabled", "success");
+        setBellAnimating(true);
+        setTimeout(() => setBellAnimating(false), 600);
+      } else {
+        addToast("Notification permission denied", "error");
+      }
+    } else {
+      setNotificationsEnabled(false);
+      localStorage.setItem("clipsync_notifications", "false");
+      addToast("Notifications disabled", "info");
+    }
+  }
+
+  // ── Room actions ──
 
   async function copyRoomCode() {
     await navigator.clipboard.writeText(`${window.location.origin}/room/${code}`);
@@ -232,95 +322,148 @@ export default function RoomClient({ code, isHome }: Props) {
     setTimeout(() => setCopied(false), 2500);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendContent(input.trim());
-    }
-  }
-
-  function handleCreateRoom() {
-    router.push(`/room/${randomCode()}`);
-  }
+  function handleCreateRoom() { router.push(`/room/${randomCode()}`); }
 
   function handleJoinSubmit(e: React.FormEvent) {
     e.preventDefault();
     const c = joinCode.trim();
-    if (!/^\d{4}$/.test(c)) {
-      setJoinError("Room code must be exactly 4 digits.");
-      return;
-    }
+    if (!/^\d{4}$/.test(c)) { setJoinError("Room code must be exactly 4 digits."); return; }
     router.push(`/room/${c}`);
   }
+
+  // Close modals on Escape
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (showJoin) setShowJoin(false);
+        if (showQR) setShowQR(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [showJoin, showQR]);
+
+  // ── Computed: filtered & sorted clips ──
+
+  const displayClips = useMemo(() => {
+    let result = [...clips];
+
+    // Search filter
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(c => c.content.toLowerCase().includes(q));
+    }
+
+    // Tag filter
+    if (filterTag) {
+      result = result.filter(c => (clipTags[c.id] || []).includes(filterTag));
+    }
+
+    // Pinned clips first
+    result.sort((a, b) => {
+      const ap = pinnedIds.includes(a.id) ? 1 : 0;
+      const bp = pinnedIds.includes(b.id) ? 1 : 0;
+      return bp - ap;
+    });
+
+    return result;
+  }, [clips, search, filterTag, pinnedIds, clipTags]);
+
+  // ═══════ RENDER ═══════
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "30px 16px 100px", width: "100%" }}>
 
-      {/* Layer 1: Header */}
+      {/* ── Header ── */}
       <div className="animate-fade-up" style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 28 }}>
-        
+
         {isHome ? (
-          /* HOME HEADER */
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {/* Logo image, place your logo inside the /public folder named logo.svg or logo.png */}
-              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 32, height: 32, display: "block" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 32, height: 32, display: "block" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
               <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }} className="gradient-text">ClipSync</h1>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: connected ? "#22c55e" : "var(--text-secondary)", fontWeight: 500 }}>
-              {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              <span>{connected ? "Active" : "Connecting..."}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, color: connected ? "var(--success)" : "var(--text-secondary)" }}>
+                {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                <span>{connected ? "Active" : "Connecting..."}</span>
+              </div>
+              {deviceCount > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12, marginLeft: 4 }}>
+                  <Monitor size={12} />
+                  <span>{deviceCount} device{deviceCount !== 1 ? "s" : ""}</span>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          /* PRIVATE ROOM HEADER */
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button className="btn-ghost" onClick={() => router.push("/")} style={{ padding: "6px 10px", borderRadius: 8 }}>
-                <ArrowLeft size={16} /> <span className="hidden sm:inline" style={{ fontSize: 13 }}>Back</span>
+              <button className="btn-ghost" onClick={() => router.push("/")} style={{ padding: "6px 10px", borderRadius: 8 }} aria-label="Go back to home">
+                <ArrowLeft size={16} />
               </button>
-              {/* Logo image */}
-              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 24, height: 24, display: "block" }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="ClipSync Logo" style={{ width: 24, height: 24, display: "block" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
               <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>ClipSync Room</h1>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
-              <button
-                className="font-mono"
-                onClick={copyRoomCode}
-                title="Copy room link"
-                style={{
-                  fontSize: 16, fontWeight: 700, letterSpacing: "0.15em",
-                  background: "rgba(108,99,255,0.1)", border: "1px solid rgba(108,99,255,0.2)",
-                  borderRadius: 8, padding: "4px 10px", color: "#a78bfa", cursor: "pointer",
-                  transition: "all 0.15s", display: "flex", alignItems: "center", gap: 8,
-                }}
-              >
-                {code} {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+              <button className="font-mono" onClick={copyRoomCode} title="Copy room link" aria-label={`Copy room ${code} link`}
+                style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.15em", background: "rgba(108,99,255,0.1)", border: "1px solid rgba(108,99,255,0.2)", borderRadius: 8, padding: "4px 10px", color: "#a78bfa", cursor: "pointer", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 8 }}>
+                {code} {copied ? <Check size={14} color="var(--success)" /> : <span style={{ opacity: 0.6, fontSize: 11 }}>Copy</span>}
               </button>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: connected ? "#22c55e" : "var(--text-secondary)", fontWeight: 500 }}>
+              <button className="btn-icon" onClick={() => setShowQR(true)} title="Share QR Code" aria-label="Show QR code" style={{ width: 36, height: 36 }}>
+                <QrCode size={16} />
+              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: connected ? "var(--success)" : "var(--text-secondary)", fontWeight: 500 }}>
                 {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
                 <span>{connected ? "Active" : "Connecting"}</span>
               </div>
+              {deviceCount > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12 }}>
+                  <Monitor size={12} />
+                  <span>{deviceCount}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {isHome && (
-          /* HOME RIGHT-SIDE BUTTONS */
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            <button className="btn-ghost" onClick={() => setShowJoin(true)} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 8 }}>
-              <LogIn size={15} /> <span>Join Room</span>
-            </button>
-            <button className="btn-primary" onClick={handleCreateRoom} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 8 }}>
-              <Plus size={15} /> <span>New Room</span>
-            </button>
-          </div>
-        )}
+        {/* Right side controls */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          {/* Notification toggle */}
+          <button
+            className={`btn-icon ${bellAnimating ? "bell-ring" : ""}`}
+            onClick={toggleNotifications}
+            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+            aria-label={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+            style={{
+              width: 36, height: 36,
+              color: notificationsEnabled ? "var(--success)" : "var(--text-secondary)",
+              background: notificationsEnabled ? "rgba(34,197,94,0.1)" : undefined,
+            }}
+          >
+            {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
+          </button>
+
+          <ThemeSwitcher />
+
+          {isHome && (
+            <>
+              <button className="btn-ghost" onClick={() => setShowJoin(true)} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 8 }} aria-label="Join a room">
+                <LogIn size={15} /> <span>Join Room</span>
+              </button>
+              <button className="btn-primary" onClick={handleCreateRoom} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 8 }} aria-label="Create a new room">
+                <Plus size={15} /> <span>New Room</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Layer 2: Paste Area */}
-      <div className="glass animate-fade-up" style={{ padding: "18px 24px", marginBottom: 36, borderRadius: 12, display: "flex", alignItems: "center", boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
-        <form onSubmit={sendClip} style={{ width: "100%", margin: 0, position: "relative" }}>
+      {/* ── Paste Area ── */}
+      <div className="glass animate-fade-up" style={{ padding: "18px 24px", marginBottom: 20, borderRadius: 12, display: "flex", flexDirection: "column", boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
+        <form onSubmit={sendClip} style={{ width: "100%", margin: 0 }}>
           <textarea
             ref={textareaRef}
             placeholder="Paste any text, snippet, or URL here to instantly sync..."
@@ -328,88 +471,141 @@ export default function RoomClient({ code, isHome }: Props) {
             onChange={handleInput}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            disabled={sending}
-            style={{ 
-              display: "block",
-              width: "100%", 
-              background: "transparent", 
-              border: "none", 
-              outline: "none", 
-              color: "var(--text-primary)", 
-              fontSize: 16, 
-              lineHeight: 1.5, 
-              resize: "none", 
-              minHeight: 80,
-              overflow: "hidden",
-              fontFamily: "inherit",
-              opacity: sending ? 0.5 : 1
+            aria-label="Paste content here to sync"
+            style={{
+              display: "block", width: "100%", background: "transparent", border: "none", outline: "none",
+              color: "var(--text-primary)", fontSize: 16, lineHeight: 1.5, resize: "none", minHeight: 80,
+              overflow: "hidden", fontFamily: "inherit", opacity: queueSize > 0 ? 0.7 : 1,
             }}
           />
         </form>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+          <span style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.6 }}>
+            {input.length > 0 ? `${input.length} characters` : ""}
+          </span>
+          {queueSize > 0 && (
+            <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 500 }}>
+              Saving {queueSize} clip{queueSize > 1 ? "s" : ""}...
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Layer 3: History */}
+      {/* ── File Upload ── */}
+      <div className="animate-fade-up" style={{ marginBottom: 28 }}>
+        <FileUpload roomCode={code} onUploadComplete={fetchClips} addToast={addToast} />
+      </div>
+
+      {/* ── Search Bar ── */}
+      {clips.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            filterTag={filterTag}
+            onFilterTag={setFilterTag}
+            allTags={allTags}
+          />
+        </div>
+      )}
+
+      {/* ── History ── */}
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 16, color: "var(--text-secondary)", fontSize: 13, fontWeight: 500, paddingLeft: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Users size={14} />
-            <span>{clips.length} {clips.length === 1 ? "clip" : "clips"}</span>
+            <span>{displayClips.length} {displayClips.length === 1 ? "clip" : "clips"}</span>
+            {search && <span style={{ opacity: 0.6 }}>(filtered)</span>}
           </div>
-          <span style={{ fontSize: 12, opacity: 0.65 }}>All clips will be vanished after 24 hours</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ExportButton clips={displayClips} />
+            {isPublic ? (
+              <span style={{ fontSize: 12, opacity: 0.65 }}>Public clips vanish after 24 hours</span>
+            ) : (
+              <span style={{ fontSize: 12, opacity: 0.65 }}>Clips persist until you delete them</span>
+            )}
+          </div>
         </div>
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "50px 0", color: "var(--text-secondary)", fontSize: 14 }}>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid rgba(108,99,255,0.2)", borderTopColor: "#6c63ff", animation: "spin-slow 0.8s linear infinite", margin: "0 auto 10px" }} />
+            <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid rgba(108,99,255,0.2)", borderTopColor: "var(--accent)", animation: "spin-slow 0.8s linear infinite", margin: "0 auto 10px" }} />
             Loading history…
           </div>
-        ) : clips.length === 0 ? (
+        ) : displayClips.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-secondary)" }}>
             <Clipboard size={36} style={{ margin: "0 auto 12px", opacity: 0.15 }} />
-            <p style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>No clips in the last 24 hours.</p>
-            <p style={{ fontSize: 13, marginTop: 4, opacity: 0.6 }}>Paste anything above to start syncing across devices.</p>
+            <p style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>
+              {search ? "No clips match your search." : isPublic ? "No clips in the last 24 hours." : "No clips in this room yet."}
+            </p>
+            <p style={{ fontSize: 13, marginTop: 4, opacity: 0.6 }}>
+              {search ? "Try a different search term." : isPublic ? "Paste anything above to start syncing across devices." : "Paste anything above to start sharing with this room."}
+            </p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {clips.map(clip => (
-              <ClipCard key={clip.id} clip={clip} onDelete={deleteClip} />
+            {displayClips.map(clip => (
+              <ClipCard
+                key={clip.id}
+                clip={clip}
+                onDelete={requestDelete}
+                isPinned={pinnedIds.includes(clip.id)}
+                onTogglePin={togglePin}
+                tags={clipTags[clip.id] || []}
+                onAddTag={addTag}
+                onRemoveTag={removeTag}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Join Room Modal */}
+      {/* ── Join Room Modal ── */}
       {showJoin && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
-          <div className="glass animate-fade-up" style={{ width: "100%", maxWidth: 340, padding: 24, borderRadius: 14, background: "var(--bg-card)" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--overlay-bg)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={() => setShowJoin(false)}>
+          <div className="glass animate-scale-in" style={{ width: "100%", maxWidth: 340, padding: 24, borderRadius: 14, background: "var(--bg-card)" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Join Room</h3>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
-              Enter a code to access a private room.
-            </p>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>Enter a code to access a private room.</p>
             <form onSubmit={handleJoinSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <input 
+              <input
                 className="input-field font-mono"
                 placeholder="1234"
                 value={joinCode}
-                onChange={e => { 
-                  // Only allow digits
-                  setJoinCode(e.target.value.replace(/\D/g, '')); 
-                  setJoinError(""); 
-                }}
+                onChange={e => { setJoinCode(e.target.value.replace(/\D/g, "")); setJoinError(""); }}
                 maxLength={4}
                 autoFocus
+                aria-label="Room code input"
                 style={{ textAlign: "center", letterSpacing: "0.4em", fontSize: 20, padding: "10px" }}
               />
-              {joinError && <p style={{ color: "#ff6584", fontSize: 12, textAlign: "center", margin: 0 }}>{joinError}</p>}
+              {joinError && <p style={{ color: "var(--accent-2)", fontSize: 12, textAlign: "center", margin: 0 }}>{joinError}</p>}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button type="button" className="btn-ghost" style={{ flex: 1, padding: "8px" }} onClick={() => setShowJoin(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ flex: 1, padding: "8px", justifyContent: "center" }}>Join</button>
+                <button type="button" className="btn-ghost" style={{ flex: 1, padding: "8px" }} onClick={() => setShowJoin(false)} aria-label="Cancel join">Cancel</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: "8px", justifyContent: "center" }} aria-label="Join room">Join</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* ── QR Code Modal ── */}
+      {showQR && (
+        <QRCodeModal
+          url={`${typeof window !== "undefined" ? window.location.origin : ""}/room/${code}`}
+          roomCode={code}
+          onClose={() => setShowQR(false)}
+        />
+      )}
+
+      {/* ── Delete Confirmation ── */}
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* ── Toasts ── */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
