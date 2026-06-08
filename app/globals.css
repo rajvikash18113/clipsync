@@ -406,22 +406,63 @@ html, body {
 
 /* File upload zone */
 .upload-zone {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 5px 12px;
   border: 1px dashed var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 .upload-zone:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(108,99,255,0.05);
+}
+
+/* Clip card hover — reveal actions */
+.clip-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.glass:hover .clip-actions,
+.glass:focus-within .clip-actions {
+  opacity: 1;
+}
+
+/* Clip content fade-out for overflow */
+.clip-content-wrapper {
+  position: relative;
+  max-height: 140px;
+  overflow: hidden;
+}
+.clip-content-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, var(--bg-card));
+  pointer-events: none;
+}
+
+/* Public room banner */
+.public-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(108,99,255,0.07);
+  border: 1px solid rgba(108,99,255,0.15);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 20px;
 }
 
 /* File preview card */

@@ -248,29 +248,30 @@ export default function ClipCard({
               </a>
             </div>
           ) : (
-            <pre
-              style={{
-                fontFamily:
-                  type === "code"
-                    ? '"JetBrains Mono", monospace'
-                    : "inherit",
-                fontSize: type === "code" ? 13 : 14,
-                lineHeight: 1.5,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
-                color: "var(--text-primary)",
-                maxHeight: 140,
-                overflowY: "auto",
-                margin: 0,
-              }}
-            >
-              {clip.content}
-            </pre>
+            <div className="clip-content-wrapper">
+              <pre
+                style={{
+                  fontFamily:
+                    type === "code"
+                      ? '"JetBrains Mono", monospace'
+                      : "inherit",
+                  fontSize: type === "code" ? 13 : 14,
+                  lineHeight: 1.5,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                  color: "var(--text-primary)",
+                  margin: 0,
+                }}
+              >
+                {clip.content}
+              </pre>
+            </div>
           )}
         </div>
 
         {/* Action buttons */}
         <div
+          className="clip-actions"
           style={{
             display: "flex",
             flexDirection: "column",
@@ -447,7 +448,8 @@ export default function ClipCard({
           display: "flex",
           alignItems: "center",
           gap: 5,
-          color: "rgba(255,255,255,0.35)",
+          color: "var(--text-secondary)",
+          opacity: 0.6,
           fontSize: 11,
           marginTop: 0,
         }}

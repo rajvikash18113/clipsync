@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, type Clip } from "@/utils/supabase/client";
 import {
-  Clipboard, Check, Clock,
-  ArrowLeft, Users, Wifi, WifiOff,
-  Plus, LogIn, X, QrCode,
-  Bell, BellOff, Monitor,
+  Clipboard, Check,
+  ArrowLeft, List, Wifi, WifiOff,
+  Plus, LogIn, QrCode,
+  Bell, BellOff, Monitor, Globe,
 } from "lucide-react";
 
 // Components
@@ -431,6 +431,8 @@ export default function RoomClient({ code, isHome }: Props) {
 
         {/* Right side controls */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          <ThemeSwitcher />
+
           {/* Notification toggle */}
           <button
             className={`btn-icon ${bellAnimating ? "bell-ring" : ""}`}
@@ -446,8 +448,6 @@ export default function RoomClient({ code, isHome }: Props) {
             {notificationsEnabled ? <Bell size={16} /> : <BellOff size={16} />}
           </button>
 
-          <ThemeSwitcher />
-
           {isHome && (
             <>
               <button className="btn-ghost" onClick={() => setShowJoin(true)} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 8 }} aria-label="Join a room">
@@ -461,12 +461,20 @@ export default function RoomClient({ code, isHome }: Props) {
         </div>
       </div>
 
+      {/* ── Public Room Banner ── */}
+      {isPublic && (
+        <div className="public-banner animate-fade-up">
+          <Globe size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+          <span>Public room — visible to everyone. Clips expire after 24 hours.</span>
+        </div>
+      )}
+
       {/* ── Paste Area ── */}
-      <div className="glass animate-fade-up" style={{ padding: "18px 24px", marginBottom: 20, borderRadius: 12, display: "flex", flexDirection: "column", boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
+      <div className="glass animate-fade-up" style={{ padding: "18px 24px", marginBottom: 28, borderRadius: 12, display: "flex", flexDirection: "column", boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
         <form onSubmit={sendClip} style={{ width: "100%", margin: 0 }}>
           <textarea
             ref={textareaRef}
-            placeholder="Paste any text, snippet, or URL here to instantly sync..."
+            placeholder="Paste or type to sync..."
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
@@ -479,21 +487,32 @@ export default function RoomClient({ code, isHome }: Props) {
             }}
           />
         </form>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.6 }}>
-            {input.length > 0 ? `${input.length} characters` : ""}
-          </span>
-          {queueSize > 0 && (
-            <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 500 }}>
-              Saving {queueSize} clip{queueSize > 1 ? "s" : ""}...
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <FileUpload roomCode={code} onUploadComplete={fetchClips} addToast={addToast} />
+            <span style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.5 }}>
+              {input.length > 0 ? `${input.length} chars` : ""}
             </span>
-          )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {queueSize > 0 && (
+              <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 500 }}>
+                Saving {queueSize} clip{queueSize > 1 ? "s" : ""}...
+              </span>
+            )}
+            <span style={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.45 }}>↵ Enter to send</span>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => sendClip()}
+              disabled={!input.trim()}
+              style={{ padding: "6px 16px", fontSize: 13 }}
+              aria-label="Send clip"
+            >
+              Send
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* ── File Upload ── */}
-      <div className="animate-fade-up" style={{ marginBottom: 28 }}>
-        <FileUpload roomCode={code} onUploadComplete={fetchClips} addToast={addToast} />
       </div>
 
       {/* ── Search Bar ── */}
@@ -513,7 +532,7 @@ export default function RoomClient({ code, isHome }: Props) {
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 16, color: "var(--text-secondary)", fontSize: 13, fontWeight: 500, paddingLeft: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Users size={14} />
+            <List size={14} />
             <span>{displayClips.length} {displayClips.length === 1 ? "clip" : "clips"}</span>
             {search && <span style={{ opacity: 0.6 }}>(filtered)</span>}
           </div>
@@ -534,12 +553,12 @@ export default function RoomClient({ code, isHome }: Props) {
           </div>
         ) : displayClips.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-secondary)" }}>
-            <Clipboard size={36} style={{ margin: "0 auto 12px", opacity: 0.15 }} />
+            <Clipboard size={36} className="animate-pulse-ring" style={{ margin: "0 auto 14px", opacity: 0.2 }} />
             <p style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>
               {search ? "No clips match your search." : isPublic ? "No clips in the last 24 hours." : "No clips in this room yet."}
             </p>
             <p style={{ fontSize: 13, marginTop: 4, opacity: 0.6 }}>
-              {search ? "Try a different search term." : isPublic ? "Paste anything above to start syncing across devices." : "Paste anything above to start sharing with this room."}
+              {search ? "Try a different search term." : "Paste or type something above to get started."}
             </p>
           </div>
         ) : (
