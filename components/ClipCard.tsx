@@ -119,6 +119,7 @@ export default function ClipCard({
     <div
       className={`glass animate-fade-up ${isPinned ? "clip-pinned" : ""}`}
       style={{
+        position: "relative",
         padding: "12px 16px",
         display: "flex",
         flexDirection: "column",
@@ -138,8 +139,7 @@ export default function ClipCard({
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ paddingRight: 112, minWidth: 0 }}>
           {/* Type badge */}
           <div
             style={{
@@ -269,89 +269,98 @@ export default function ClipCard({
               </pre>
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Action buttons */}
-        <div
-          className="clip-actions"
+      {/* Action buttons */}
+      <div
+        className="clip-actions"
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 12,
+          display: "flex",
+          flexDirection: "row",
+          gap: 4,
+        }}
+      >
+        {/* Pin */}
+        <button
+          onClick={() => onTogglePin(clip.id)}
+          title={isPinned ? "Unpin" : "Pin to top"}
+          aria-label={isPinned ? "Unpin clip" : "Pin clip to top"}
+          className={`btn-icon ${isPinned ? "animate-pin-bounce" : ""}`}
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            flexShrink: 0,
+            width: 28,
+            height: 28,
+            color: isPinned ? "var(--pin-color)" : "var(--text-secondary)",
+            background: isPinned
+              ? "rgba(245,158,11,0.12)"
+              : "var(--bg-card)",
           }}
         >
-          {/* Pin */}
-          <button
-            onClick={() => onTogglePin(clip.id)}
-            title={isPinned ? "Unpin" : "Pin to top"}
-            aria-label={isPinned ? "Unpin clip" : "Pin clip to top"}
-            className={`btn-icon ${isPinned ? "animate-pin-bounce" : ""}`}
-            style={{
-              color: isPinned ? "var(--pin-color)" : "var(--text-secondary)",
-              background: isPinned
-                ? "rgba(245,158,11,0.12)"
-                : "rgba(255,255,255,0.03)",
-            }}
-          >
-            <Pin size={13} fill={isPinned ? "var(--pin-color)" : "none"} />
-          </button>
+          <Pin size={13} fill={isPinned ? "var(--pin-color)" : "none"} />
+        </button>
 
-          {/* Copy */}
-          <button
-            onClick={copyToClipboard}
-            title="Copy"
-            aria-label="Copy clip to clipboard"
-            className="btn-icon"
-            style={{
-              background: copied
-                ? "rgba(34,197,94,0.15)"
-                : "rgba(255,255,255,0.03)",
-              color: copied ? "#22c55e" : "var(--text-secondary)",
-            }}
-          >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-          </button>
+        {/* Copy */}
+        <button
+          onClick={copyToClipboard}
+          title="Copy"
+          aria-label="Copy clip to clipboard"
+          className="btn-icon"
+          style={{
+            width: 28,
+            height: 28,
+            background: copied
+              ? "rgba(34,197,94,0.15)"
+              : "var(--bg-card)",
+            color: copied ? "#22c55e" : "var(--text-secondary)",
+          }}
+        >
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+        </button>
 
-          {/* Tag */}
-          <button
-            onClick={() => setShowTagInput(!showTagInput)}
-            title="Add tag"
-            aria-label="Add tag to clip"
-            className="btn-icon"
-            style={{
-              color: tags.length > 0 ? "var(--tag-text)" : "var(--text-secondary)",
-              background:
-                tags.length > 0
-                  ? "var(--tag-bg)"
-                  : "rgba(255,255,255,0.03)",
-            }}
-          >
-            <Tag size={13} />
-          </button>
+        {/* Tag */}
+        <button
+          onClick={() => setShowTagInput(!showTagInput)}
+          title="Add tag"
+          aria-label="Add tag to clip"
+          className="btn-icon"
+          style={{
+            width: 28,
+            height: 28,
+            color: tags.length > 0 ? "var(--tag-text)" : "var(--text-secondary)",
+            background:
+              tags.length > 0
+                ? "var(--tag-bg)"
+                : "var(--bg-card)",
+          }}
+        >
+          <Tag size={13} />
+        </button>
 
-          {/* Delete */}
-          <button
-            onClick={() => onDelete(clip.id)}
-            title="Delete from view"
-            aria-label="Delete clip from view"
-            className="btn-icon"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              color: "var(--text-secondary)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--danger-bg)";
-              e.currentTarget.style.color = "var(--danger)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-              e.currentTarget.style.color = "var(--text-secondary)";
-            }}
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
+        {/* Delete */}
+        <button
+          onClick={() => onDelete(clip.id)}
+          title="Delete from view"
+          aria-label="Delete clip from view"
+          className="btn-icon"
+          style={{
+            width: 28,
+            height: 28,
+            background: "var(--bg-card)",
+            color: "var(--text-secondary)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--danger-bg)";
+            e.currentTarget.style.color = "var(--danger)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--bg-card)";
+            e.currentTarget.style.color = "var(--text-secondary)";
+          }}
+        >
+          <Trash2 size={13} />
+        </button>
       </div>
 
       {/* Tags row */}
