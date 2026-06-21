@@ -41,15 +41,11 @@ export default function SearchBar({
           <button
             onClick={() => onChange("")}
             aria-label="Clear search"
+            className="icon-button-plain"
             style={{
               position: "absolute",
               right: 10,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
               color: "var(--text-secondary)",
-              display: "flex",
-              alignItems: "center",
               padding: 2,
             }}
           >

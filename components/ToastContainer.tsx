@@ -17,6 +17,9 @@ export default function ToastContainer({
 }) {
   return (
     <div
+      role="region"
+      aria-live="polite"
+      aria-label="Notifications"
       style={{
         position: "fixed",
         bottom: 24,
@@ -25,12 +28,13 @@ export default function ToastContainer({
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        maxWidth: 360,
+        maxWidth: "min(360px, calc(100vw - 48px))",
       }}
     >
       {toasts.map((t) => (
         <div
           key={t.id}
+          role={t.type === "error" ? "alert" : "status"}
           className="animate-fade-up"
           style={{
             display: "flex",
@@ -61,15 +65,11 @@ export default function ToastContainer({
           <span style={{ flex: 1 }}>{t.message}</span>
           <button
             onClick={() => onDismiss(t.id)}
-            aria-label="Dismiss notification"
+            aria-label={`Dismiss: ${t.message.slice(0, 40)}`}
+            className="icon-button-plain"
             style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
               color: "var(--text-secondary)",
               padding: 2,
-              display: "flex",
-              alignItems: "center",
             }}
           >
             <X size={14} />

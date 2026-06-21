@@ -89,6 +89,7 @@ export default function FileUpload({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
+    if (uploading) return;
     const file = e.dataTransfer.files?.[0];
     if (file) uploadFile(file);
   }
@@ -96,10 +97,20 @@ export default function FileUpload({
   return (
     <div
       className={`upload-zone ${dragOver ? "drag-over" : ""}`}
+      role="button"
+      tabIndex={uploading ? -1 : 0}
+      aria-disabled={uploading}
+      aria-busy={uploading}
       onClick={() => !uploading && fileInputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (!uploading && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          fileInputRef.current?.click();
+        }
+      }}
       onDragOver={(e) => {
         e.preventDefault();
-        setDragOver(true);
+        if (!uploading) setDragOver(true);
       }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
@@ -114,6 +125,7 @@ export default function FileUpload({
         ref={fileInputRef}
         type="file"
         onChange={handleFileSelect}
+        disabled={uploading}
         style={{ display: "none" }}
         aria-label="Upload file"
       />
@@ -124,7 +136,7 @@ export default function FileUpload({
               width: 16,
               height: 16,
               borderRadius: "50%",
-              border: "2px solid rgba(108,99,255,0.2)",
+              border: "2px solid var(--accent-glow)",
               borderTopColor: "var(--accent)",
               animation: "spin-slow 0.8s linear infinite",
             }}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, Download, QrCode } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Download, QrCode, ImageOff } from "lucide-react";
 
 export default function QRCodeModal({
   url,
@@ -12,12 +12,32 @@ export default function QRCodeModal({
   roomCode: string;
   onClose: () => void;
 }) {
-  // Close on Escape
+  const [qrFailed, setQrFailed] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const downloadButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close on Escape, trap focus between close/download buttons
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        const first = closeButtonRef.current;
+        const last = downloadButtonRef.current;
+        if (!first || !last) return;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     }
     window.addEventListener("keydown", handleKey);
+    closeButtonRef.current?.focus();
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
@@ -56,6 +76,9 @@ export default function QRCodeModal({
     >
       <div
         className="glass animate-scale-in"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qr-modal-title"
         style={{
           width: "100%",
           maxWidth: 360,
@@ -82,20 +105,18 @@ export default function QRCodeModal({
               gap: 8,
             }}
           >
-            <QrCode size={18} color="var(--accent)" />
-            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+            <QrCode size={18} color="var(--accent)" aria-hidden="true" />
+            <h3 id="qr-modal-title" style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
               Share Room
             </h3>
           </div>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             aria-label="Close QR modal"
+            className="icon-button-plain"
             style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
               color: "var(--text-secondary)",
-              display: "flex",
               padding: 4,
             }}
           >
@@ -105,17 +126,34 @@ export default function QRCodeModal({
 
         {/* QR Code */}
         <div className="qr-container" style={{ marginBottom: 16 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrApiUrl}
-            alt={`QR code for room ${roomCode}`}
-            width={250}
-            height={250}
-            style={{ borderRadius: 8 }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+          {qrFailed ? (
+            <div
+              role="alert"
+              style={{
+                width: 250,
+                height: 250,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                color: "var(--qr-fg)",
+              }}
+            >
+              <ImageOff size={28} aria-hidden="true" />
+              <span style={{ fontSize: 13 }}>QR code failed to load.</span>
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={qrApiUrl}
+              alt={`QR code for room ${roomCode}`}
+              width={250}
+              height={250}
+              style={{ borderRadius: 8 }}
+              onError={() => setQrFailed(true)}
+            />
+          )}
         </div>
 
         {/* Room info */}
@@ -146,8 +184,10 @@ export default function QRCodeModal({
 
         {/* Download button */}
         <button
+          ref={downloadButtonRef}
           className="btn-primary"
           onClick={downloadQR}
+          disabled={qrFailed}
           style={{
             width: "100%",
             padding: "10px",
