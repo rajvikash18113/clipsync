@@ -204,6 +204,7 @@ export default function ClipCard({
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
+                  title={fileMeta.name}
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
@@ -243,6 +244,7 @@ export default function ClipCard({
                   textDecoration: "none",
                 }}
                 title="Download file"
+                aria-label={`Download ${fileMeta.name}`}
               >
                 <Download size={14} />
               </a>
@@ -339,8 +341,8 @@ export default function ClipCard({
               color: "var(--text-secondary)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(239,68,68,0.15)";
-              e.currentTarget.style.color = "#f87171";
+              e.currentTarget.style.background = "var(--danger-bg)";
+              e.currentTarget.style.color = "var(--danger)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255,255,255,0.03)";
@@ -374,14 +376,10 @@ export default function ClipCard({
                 <button
                   onClick={() => onRemoveTag(clip.id, tag)}
                   aria-label={`Remove tag ${tag}`}
+                  className="icon-button-plain"
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
                     color: "inherit",
                     padding: 0,
-                    display: "flex",
-                    alignItems: "center",
                     marginLeft: 2,
                   }}
                 >
@@ -400,6 +398,7 @@ export default function ClipCard({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value.toLowerCase())}
                   placeholder="tag name"
+                  aria-label="New tag name"
                   maxLength={20}
                   style={{
                     width: 80,

@@ -76,18 +76,20 @@ export default function ExportButton({ clips }: { clips: Clip[] }) {
         onClick={() => setOpen(!open)}
         title="Export clips"
         aria-label="Export clips"
+        aria-haspopup="menu"
+        aria-expanded={open}
         style={{ width: 36, height: 36 }}
       >
         <Download size={15} />
       </button>
 
       {open && (
-        <div className="dropdown-menu animate-fade-down">
-          <button className="dropdown-item" onClick={exportAsText}>
+        <div className="dropdown-menu animate-fade-down" role="menu">
+          <button className="dropdown-item" role="menuitem" onClick={exportAsText}>
             <FileText size={14} />
             Export as .txt
           </button>
-          <button className="dropdown-item" onClick={exportAsJson}>
+          <button className="dropdown-item" role="menuitem" onClick={exportAsJson}>
             <FileJson size={14} />
             Export as .json
           </button>

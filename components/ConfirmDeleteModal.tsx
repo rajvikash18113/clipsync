@@ -35,6 +35,9 @@ export default function ConfirmDeleteModal({
     >
       <div
         className="glass animate-scale-in"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-delete-title"
         style={{
           width: "100%",
           maxWidth: 380,
@@ -57,15 +60,15 @@ export default function ConfirmDeleteModal({
               width: 40,
               height: 40,
               borderRadius: 10,
-              background: "rgba(239,68,68,0.12)",
+              background: "var(--danger-bg)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <AlertTriangle size={20} color="#f87171" />
+            <AlertTriangle size={20} color="var(--danger)" />
           </div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+          <h3 id="confirm-delete-title" style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
             Delete Clip
           </h3>
         </div>
@@ -97,31 +100,10 @@ export default function ConfirmDeleteModal({
             Cancel
           </button>
           <button
+            className="btn-danger"
             onClick={onConfirm}
             aria-label="Confirm deletion"
-            style={{
-              flex: 1,
-              padding: "10px",
-              justifyContent: "center",
-              fontSize: 14,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "linear-gradient(135deg, #ef4444, #dc2626)",
-              color: "#fff",
-              fontWeight: 600,
-              borderRadius: 10,
-              border: "none",
-              cursor: "pointer",
-              transition: "transform 0.15s, box-shadow 0.15s",
-              boxShadow: "0 4px 24px rgba(239,68,68,0.25)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-            }}
+            style={{ flex: 1, padding: "10px", fontSize: 14 }}
           >
             <Trash2 size={14} />
             Delete

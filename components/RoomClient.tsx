@@ -8,6 +8,7 @@ import {
   ArrowLeft, List, Wifi, WifiOff,
   Plus, LogIn, QrCode,
   Bell, BellOff, Monitor, Globe,
+  GitFork,
 } from "lucide-react";
 
 // Components
@@ -95,7 +96,7 @@ export default function RoomClient({ code, isHome }: Props) {
   const addToast = useCallback((message: string, type: Toast["type"]) => {
     const id = String(++toastIdRef.current);
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), type === "error" ? 8000 : 4000);
   }, []);
 
   const dismissToast = useCallback((id: string) => {
@@ -372,7 +373,7 @@ export default function RoomClient({ code, isHome }: Props) {
   // ═══════ RENDER ═══════
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "30px 16px 100px", width: "100%" }}>
+    <div className="room-container">
 
       {/* ── Header ── */}
       <div className="animate-fade-up" style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 28 }}>
@@ -390,8 +391,11 @@ export default function RoomClient({ code, isHome }: Props) {
                 <span>{connected ? "Active" : "Connecting..."}</span>
               </div>
               {deviceCount > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12, marginLeft: 4 }}>
-                  <Monitor size={12} />
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12, marginLeft: 4 }}
+                  aria-label={`${deviceCount} device${deviceCount !== 1 ? "s" : ""} connected to this room`}
+                >
+                  <Monitor size={12} aria-hidden="true" />
                   <span>{deviceCount} device{deviceCount !== 1 ? "s" : ""}</span>
                 </div>
               )}
@@ -420,8 +424,11 @@ export default function RoomClient({ code, isHome }: Props) {
                 <span>{connected ? "Active" : "Connecting"}</span>
               </div>
               {deviceCount > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12 }}>
-                  <Monitor size={12} />
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 12 }}
+                  aria-label={`${deviceCount} device${deviceCount !== 1 ? "s" : ""} connected to this room`}
+                >
+                  <Monitor size={12} aria-hidden="true" />
                   <span>{deviceCount}</span>
                 </div>
               )}
@@ -547,13 +554,13 @@ export default function RoomClient({ code, isHome }: Props) {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: "50px 0", color: "var(--text-secondary)", fontSize: 14 }}>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid rgba(108,99,255,0.2)", borderTopColor: "var(--accent)", animation: "spin-slow 0.8s linear infinite", margin: "0 auto 10px" }} />
+          <div role="status" style={{ textAlign: "center", padding: "50px 0", color: "var(--text-secondary)", fontSize: 14 }}>
+            <div aria-hidden="true" style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid var(--accent-glow)", borderTopColor: "var(--accent)", animation: "spin-slow 0.8s linear infinite", margin: "0 auto 10px" }} />
             Loading history…
           </div>
         ) : displayClips.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-secondary)" }}>
-            <Clipboard size={36} className="animate-pulse-ring" style={{ margin: "0 auto 14px", opacity: 0.2 }} />
+            <Clipboard size={36} aria-hidden="true" className="animate-pulse-ring" style={{ margin: "0 auto 14px", opacity: 0.2 }} />
             <p style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>
               {search ? "No clips match your search." : isPublic ? "No clips in the last 24 hours." : "No clips in this room yet."}
             </p>
@@ -582,8 +589,8 @@ export default function RoomClient({ code, isHome }: Props) {
       {/* ── Join Room Modal ── */}
       {showJoin && (
         <div style={{ position: "fixed", inset: 0, background: "var(--overlay-bg)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={() => setShowJoin(false)}>
-          <div className="glass animate-scale-in" style={{ width: "100%", maxWidth: 340, padding: 24, borderRadius: 14, background: "var(--bg-card)" }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Join Room</h3>
+          <div className="glass animate-scale-in" role="dialog" aria-modal="true" aria-labelledby="join-room-title" style={{ width: "100%", maxWidth: 340, padding: 24, borderRadius: 14, background: "var(--bg-card)" }} onClick={e => e.stopPropagation()}>
+            <h3 id="join-room-title" style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Join Room</h3>
             <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>Enter a code to access a private room.</p>
             <form onSubmit={handleJoinSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input
@@ -622,6 +629,21 @@ export default function RoomClient({ code, isHome }: Props) {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+
+      {/* ── Footer ── */}
+      <div style={{ textAlign: "center", marginTop: 40, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+        <a
+          href="https://github.com/rajvikash18113/clipsync"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)", textDecoration: "none" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+        >
+          <GitFork size={13} aria-hidden="true" />
+          <span>ClipSync is open source — contribute on GitHub</span>
+        </a>
+      </div>
 
       {/* ── Toasts ── */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
